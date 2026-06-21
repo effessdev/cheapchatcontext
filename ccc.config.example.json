@@ -1,0 +1,9 @@
+{
+  "include": [
+    "docs",
+    "package.json"
+  ],
+  "exclude": [
+    "docs/internal-notes.md"
+  ]
+}
