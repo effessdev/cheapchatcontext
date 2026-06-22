@@ -29,6 +29,10 @@ The executable will be at `build\Release\ccc.exe`. Put its folder on your
 `PATH` (System Properties > Environment Variables) so you can call `ccc`
 from any project directory.
 
+To create a Windows installer, install Inno Setup, open `ccc-installer.iss`
+in the Inno Setup Compiler, and press `F9` (Compile). The generated
+installer will be written to the `output/` directory.
+
 ### Windows (MinGW) / Linux / macOS
 
 ```bash

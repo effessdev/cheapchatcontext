@@ -38,18 +38,3 @@ begin
     Result := Pos(LowerCase(Dir),
                   LowerCase(Path)) = 0;
 end;
-
-procedure CurStepChanged(CurStep: TSetupStep);
-begin
-  if CurStep = ssPostInstall then
-  begin
-    SendMessageTimeout(
-      HWND_BROADCAST,
-      WM_SETTINGCHANGE,
-      0,
-      Integer(PChar('Environment')),
-      SMTO_ABORTIFHUNG,
-      5000,
-      0);
-  end;
-end;
