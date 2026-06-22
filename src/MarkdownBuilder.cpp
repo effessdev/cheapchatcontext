@@ -70,6 +70,8 @@ std::string buildContext(const std::string& projectStructure,
         }
     }
 
+    out << "---\n\n\n";
+
     return out.str();
 }
 
