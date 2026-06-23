@@ -20,7 +20,6 @@ std::string wrapInCodeFence(const std::string& content, const std::string& langu
 // pieces gathered elsewhere in the program. Sections with no content
 // (e.g. no AGENTS.md, or no files configured) are omitted.
 std::string buildContext(const std::string& projectStructure,
-                          const std::optional<std::string>& agentsContent,
                           const std::vector<std::pair<std::string, FileContent>>& otherFiles);
 
 }  // namespace ccc

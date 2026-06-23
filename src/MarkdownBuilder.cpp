@@ -42,7 +42,6 @@ std::string wrapInCodeFence(const std::string& content, const std::string& langu
 }
 
 std::string buildContext(const std::string& projectStructure,
-                          const std::optional<std::string>& agentsContent,
                           const std::vector<std::pair<std::string, FileContent>>& otherFiles) {
     std::ostringstream out;
 
@@ -50,11 +49,6 @@ std::string buildContext(const std::string& projectStructure,
 
     out << "## Project structure:\n\n";
     out << wrapInCodeFence(projectStructure) << "\n";
-
-    if (agentsContent.has_value()) {
-        out << "## AGENTS.md\n\n";
-        out << wrapInCodeFence(*agentsContent) << "\n";
-    }
 
     if (!otherFiles.empty()) {
         out << "## Other important files\n\n";

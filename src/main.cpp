@@ -19,10 +19,11 @@ void printHelp() {
     std::cout
         << "ccc - Copy Context to Clipboard\n\n"
         << "Scans the current directory (honoring .gitignore), reads AGENTS.md and any\n"
-        << "files/folders listed in ccc.config.json, and copies a single Markdown\n"
+    << "files/folders listed in ccc.config.json, and copies a single Markdown\n"
         << "context block to the clipboard so you can paste it straight into a chatbot.\n\n"
         << "Usage: ccc [options]\n\n"
         << "Options:\n"
+    << "  config                Create a default ccc.config.json in the current directory\n"
         << "  -o, --output <file>   Also write the generated context to <file>\n"
         << "      --no-clipboard    Don't touch the clipboard (useful with --output)\n"
         << "  -h, --help            Show this help message\n";
@@ -39,6 +40,34 @@ int main(int argc, char** argv) {
         if (arg == "-h" || arg == "--help") {
             printHelp();
             return 0;
+        } else if (arg == "config") {
+            // Create a default config file (ccc.config.json) in the current
+            // working directory. Do not overwrite an existing file.
+            const fs::path configPath = fs::current_path() / "ccc.config.json";
+            std::error_code existsEc;
+            if (fs::exists(configPath, existsEc) && !existsEc) {
+                std::cout << "ccc.config.json already exists: " << configPath.string() << "\n";
+                return 0;
+            }
+            const std::string defaultConfig =
+                "{\n"
+                "  \"include\": [\n"
+                "    \"AGENTS.md\",\n"
+                "    \"docs\",\n"
+                "    \"package.json\"\n"
+                "  ],\n"
+                "  \"exclude\": [\n"
+                "    \"docs/internal-notes.md\"\n"
+                "  ]\n"
+                "}\n";
+            try {
+                ccc::writeTextFile(configPath, defaultConfig);
+                std::cout << "Wrote default config to " << configPath.string() << "\n";
+                return 0;
+            } catch (const std::exception& e) {
+                std::cerr << "Failed to write config: " << e.what() << "\n";
+                return 1;
+            }
         } else if ((arg == "-o" || arg == "--output") && i + 1 < argc) {
             outputFile = argv[++i];
         } else if (arg == "--no-clipboard") {
@@ -63,22 +92,7 @@ int main(int argc, char** argv) {
     }
     const std::string projectStructure = ccc::renderTree(rootNode, rootLabel);
 
-    // 2. AGENTS.md, if present at the project root.
-    std::optional<std::string> agentsContent;
-    const fs::path agentsPath = root / "AGENTS.md";
-    std::error_code existsEc;
-    if (fs::exists(agentsPath, existsEc) && !existsEc && fs::is_regular_file(agentsPath)) {
-        const ccc::FileContent fc = ccc::readFileSafely(agentsPath);
-        if (fc.readError) {
-            std::cerr << "Warning: found AGENTS.md but could not read it.\n";
-        } else if (fc.isBinary) {
-            std::cerr << "Warning: AGENTS.md looks like a binary file; skipping its contents.\n";
-        } else {
-            agentsContent = fc.content;
-        }
-    }
-
-    // 3. ccc.config.json - explicit extra files/folders to include.
+    // 2. ccc.config.json - explicit extra files/folders to include.
     const fs::path configPath = root / "ccc.config.json";
     const std::vector<std::string> otherRelPaths = ccc::resolveConfig(root, configPath);
 
@@ -90,7 +104,7 @@ int main(int argc, char** argv) {
     }
 
     // 4. Assemble the final Markdown context.
-    const std::string context = ccc::buildContext(projectStructure, agentsContent, otherFiles);
+    const std::string context = ccc::buildContext(projectStructure, otherFiles);
 
     // 5. Output.
     if (!outputFile.empty()) {

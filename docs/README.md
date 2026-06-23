@@ -2,18 +2,6 @@
 
 A small command-line tool for feeding chatbots context about your project.
 
-Run it from any project directory (or add its folder to `PATH` and run it
-from anywhere inside a project) and it will:
-
-1. Scan the current directory, honoring every `.gitignore` it finds
-   (root-level and nested).
-2. Render that scan as a simple ASCII directory tree.
-3. Read `AGENTS.md` from the project root, if present.
-4. Read `ccc.config.json` from the project root, if present, and pull in
-   whatever extra files/folders it lists.
-5. Assemble all of that into one Markdown document and copy it straight to
-   your clipboard, ready to paste into a chat.
-
 ## Building
 
 Requires a C++17 compiler and CMake 3.16+.
@@ -50,7 +38,7 @@ them, e.g.:
 sudo apt install xclip
 ```
 
-## Usage
+## Advanced usage
 
 ```
 ccc [options]
@@ -58,7 +46,7 @@ ccc [options]
 Options:
   -o, --output <file>   Also write the generated context to <file>
       --no-clipboard    Don't touch the clipboard (useful with --output)
-  -h, --help             Show usage
+  -h, --help            Show usage
 ```
 
 Just running `ccc` with no arguments is the normal case: it scans the
@@ -97,11 +85,6 @@ Notes:
   than dumped into the output, since that would just be garbage text and
   bloat the clipboard contents.
 
-### `AGENTS.md`
-
-If a file named `AGENTS.md` exists in the project root, its contents are
-included verbatim (inside a fenced code block) under its own heading.
-
 ## Output format
 
 ```markdown
@@ -111,12 +94,6 @@ included verbatim (inside a fenced code block) under its own heading.
 
 \`\`\`
 (ASCII tree)
-\`\`\`
-
-## AGENTS.md
-
-\`\`\`
-(contents of AGENTS.md)
 \`\`\`
 
 ## Other important files
