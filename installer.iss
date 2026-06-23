@@ -1,14 +1,13 @@
 [Setup]
 AppName=CheapChatContext
-AppVersion=1.0.0
+AppVersion=2.0.0
 DefaultDirName={localappdata}\CheapChatContext
 DefaultGroupName=CheapChatContext
 PrivilegesRequired=lowest
 OutputDir=output
-OutputBaseFilename=cccInstaller
+OutputBaseFilename=ccc-Setup
 Compression=lzma
 SolidCompression=yes
-; Tells Windows to refresh environment variables after install/uninstall
 ChangesEnvironment=yes 
 
 [Files]
