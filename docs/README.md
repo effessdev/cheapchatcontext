@@ -1,6 +1,4 @@
-# CheapChatContext
-
-A small command-line tool for feeding chatbots context about your project.
+# CheapChatContext developer documentation
 
 ## Building
 
@@ -38,79 +36,6 @@ them, e.g.:
 sudo apt install xclip
 ```
 
-## Advanced usage
-
-```
-ccc [options]
-
-Options:
-  -o, --output <file>   Also write the generated context to <file>
-      --no-clipboard    Don't touch the clipboard (useful with --output)
-  -h, --help            Show usage
-```
-
-Just running `ccc` with no arguments is the normal case: it scans the
-current directory and copies the result to your clipboard.
-
-### `ccc.config.json`
-
-Lets you pull specific extra files (or whole folders) into the generated
-context, beyond what's already shown in the project structure tree.
-Useful for things like a `package.json`, a design doc, or a folder of
-schema files that you always want a chatbot to see in full.
-
-```jsonc
-{
-  "include": [
-    "docs", // a folder - every file inside is included, recursively
-    "package.json", // a single file
-  ],
-  "exclude": [
-    "docs/internal-notes.md", // skip just this one file from the "docs" include
-  ],
-}
-```
-
-Notes:
-
-- Paths are relative to the project root (the directory you run `ccc`
-  from), using forward slashes.
-- `exclude` entries can point at a single file or at an entire
-  sub-folder; either way, everything under that path is skipped from the
-  expanded results.
-- Folder includes are an explicit request from you, so they deliberately
-  bypass `.gitignore` - if you list a folder, you get everything in it
-  (minus anything you've excluded).
-- Files that look binary (contain a NUL byte) are noted as omitted rather
-  than dumped into the output, since that would just be garbage text and
-  bloat the clipboard contents.
-
-## Output format
-
-```markdown
-# Context:
-
-## Project structure:
-
-\`\`\`
-(ASCII tree)
-\`\`\`
-
-## Other important files
-
-### path/to/file
-
-\`\`\`
-(file contents)
-\`\`\`
-```
-
-Sections with nothing to show (no `AGENTS.md`, no `ccc.config.json`
-entries) are omitted entirely. If a file's own contents contain a run of
-backticks, the surrounding fence is automatically made one backtick
-longer than the longest run found inside it - the standard Markdown way
-of nesting code fences safely, rather than mangling the file's contents.
-
 ## How `.gitignore` matching works
 
 `ccc` implements its own `.gitignore`-pattern matcher covering the rules
@@ -124,27 +49,3 @@ around escaped characters aren't handled), but it covers the patterns
 found in the overwhelming majority of real-world `.gitignore` files. The
 `.git` directory itself is always skipped, regardless of `.gitignore`
 content.
-
-## Project layout
-
-```
-ccc/
-|-- CMakeLists.txt
-|-- src/
-|   |-- main.cpp              entry point / CLI handling
-|   |-- GitIgnore.{h,cpp}      .gitignore parsing + matching engine
-|   |-- DirectoryScanner.{h,cpp}  builds the in-memory file tree
-|   |-- TreeRenderer.{h,cpp}   renders the tree as ASCII art
-|   |-- Config.{h,cpp}        parses ccc.config.json
-|   |-- MarkdownBuilder.{h,cpp}  assembles the final context string
-|   |-- FileUtils.{h,cpp}      file read/write + binary detection helpers
-|   |-- Clipboard.h            platform-agnostic clipboard interface
-|   |-- Clipboard_Windows.cpp  Win32 clipboard implementation
-|   `-- Clipboard_Linux.cpp    shells out to wl-copy/xclip/xsel
-`-- third_party/
-    `-- nlohmann/json.hpp     vendored JSON library (MIT licensed)
-```
-
-Each piece is independent and unit-testable on its own; only `main.cpp`
-wires them together, and only the two `Clipboard_*.cpp` files are
-platform-specific.

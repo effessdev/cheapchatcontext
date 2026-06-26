@@ -1,9 +1,10 @@
 {
   "include": [
     "AGENTS.md",
+    "docs/",
     "src/main.cpp"
   ],
   "exclude": [
-    "third_party"
+    "docs/secret.md"
   ]
 }
