@@ -32,4 +32,11 @@ namespace ccc {
 std::vector<std::string> resolveConfig(const std::filesystem::path& rootDir,
                                         const std::filesystem::path& configPath);
 
+// Creates default config file in the given directory.
+// Returns:
+//  0 -> success
+//  1 -> already exists
+//  2 -> write error
+int createDefaultConfig(const std::filesystem::path& rootDir);
+
 }  // namespace ccc

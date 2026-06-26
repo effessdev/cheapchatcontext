@@ -1,4 +1,5 @@
 #include "Config.h"
+#include "FileUtils.h"
 
 #include <algorithm>
 #include <fstream>
@@ -8,10 +9,13 @@
 #include <nlohmann/json.hpp>
 
 namespace ccc {
+    // e: All functions below (until `}`) are in the ccc namespace, meaning that they can only be called like `ccc::functionName()`.
 
 namespace {
+    // e: This is an anonymous namespace.
+    //    Functions inside this can be directly called by other functions in this file, but they cannot be accessed from external files.
 
-namespace fs = std::filesystem;
+namespace fs = std::filesystem; // e: This is just an alias. This allows us to use fs::path instead of std::filesystem::path.
 
 std::string toRelString(const fs::path& abs, const fs::path& root) {
     std::error_code ec;
@@ -139,6 +143,38 @@ std::vector<std::string> resolveConfig(const fs::path& rootDir, const fs::path& 
     }
 
     return result;
+}
+
+int createDefaultConfig(const std::filesystem::path& rootDir) {
+    const std::filesystem::path configPath = rootDir / "ccc.config.json";
+
+    std::error_code ec;
+    if (std::filesystem::exists(configPath, ec) && !ec) {
+        std::cout << "ccc.config.json already exists: " << configPath.string() << "\n";
+        return 1;
+    }
+
+    const std::string defaultConfig =
+        "{\n"
+        "  \"include\": [\n"
+        "    \"AGENTS.md\",\n"
+        "    \"docs\",\n"
+        "    \"package.json\"\n"
+        "  ],\n"
+        "  \"exclude\": [\n"
+        "    \"docs/internal-notes.md\"\n"
+        "  ]\n"
+        "}\n";
+
+    try {
+        ccc::writeTextFile(configPath, defaultConfig);
+        std::cout << "Wrote default config to " << configPath.string() << "\n";
+        return 0;
+    }
+    catch (const std::exception& e) {
+        std::cerr << "Failed to write config: " << e.what() << "\n";
+        return 2;
+    }
 }
 
 }  // namespace ccc

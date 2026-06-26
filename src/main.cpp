@@ -32,6 +32,9 @@ namespace {
 } // namespace
 
 int main(int argc, char** argv) {
+    // e: argc: argument count (an int)
+    // e: argv: argument vector (an array of C-style strings (char*))
+
     std::vector<std::string> addArgs;
     std::vector<std::string> excludeArgs;
 
@@ -47,35 +50,7 @@ int main(int argc, char** argv) {
         }
 
         else if (arg == "config") {
-            const fs::path configPath = fs::current_path() / "ccc.config.json";
-
-            std::error_code ec;
-            if (fs::exists(configPath, ec) && !ec) {
-                std::cout << "ccc.config.json already exists: " << configPath.string() << "\n";
-                return 0;
-            }
-
-            const std::string defaultConfig =
-                "{\n"
-                "  \"include\": [\n"
-                "    \"AGENTS.md\",\n"
-                "    \"docs\",\n"
-                "    \"package.json\"\n"
-                "  ],\n"
-                "  \"exclude\": [\n"
-                "    \"docs/internal-notes.md\"\n"
-                "  ]\n"
-                "}\n";
-
-            try {
-                ccc::writeTextFile(configPath, defaultConfig);
-                std::cout << "Wrote default config to " << configPath.string() << "\n";
-                return 0;
-            }
-            catch (const std::exception& e) {
-                std::cerr << "Failed to write config: " << e.what() << "\n";
-                return 1;
-            }
+            return ccc::createDefaultConfig(fs::current_path());
         }
 
         else if (arg == "-a") {
