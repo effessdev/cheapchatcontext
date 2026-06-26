@@ -35,17 +35,3 @@ them, e.g.:
 ```bash
 sudo apt install xclip
 ```
-
-## How `.gitignore` matching works
-
-`ccc` implements its own `.gitignore`-pattern matcher covering the rules
-people actually rely on day to day: `*`, `?`, `[...]` character classes,
-`**` for matching across directories, `/`-anchored vs. any-depth
-patterns, directory-only (`pattern/`) patterns, and `!` negation -
-including negating a file inside a directory excluded by a _less_
-specific `.gitignore` higher up the tree. It is not a byte-for-byte
-reimplementation of git's own matcher (a handful of obscure edge cases
-around escaped characters aren't handled), but it covers the patterns
-found in the overwhelming majority of real-world `.gitignore` files. The
-`.git` directory itself is always skipped, regardless of `.gitignore`
-content.

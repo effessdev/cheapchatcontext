@@ -30,7 +30,7 @@ else()
     set(CCC_PLATFORM_SOURCES src/Clipboard_Linux.cpp)
 endif()
 
-add_executable(ccc ${CCC_COMMON_SOURCES} ${CCC_PLATFORM_SOURCES})
+add_executable(ccc ${CCC_COMMON_SOURCES} ${CCC_PLATFORM_SOURCES} "src/PathResolver.h" "src/PathResolver.cpp")
 
 target_include_directories(ccc PRIVATE
     ${CMAKE_CURRENT_SOURCE_DIR}/src

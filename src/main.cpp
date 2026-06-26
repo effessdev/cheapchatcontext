@@ -1,6 +1,5 @@
 #include <filesystem>
 #include <iostream>
-#include <optional>
 #include <string>
 #include <vector>
 
@@ -10,45 +9,52 @@
 #include "FileUtils.h"
 #include "MarkdownBuilder.h"
 #include "TreeRenderer.h"
+#include "PathResolver.h"
 
 namespace fs = std::filesystem;
 
 namespace {
 
-void printHelp() {
-    std::cout
-        << "ccc - Copy Context to Clipboard\n\n"
-        << "Scans the current directory (honoring .gitignore), reads AGENTS.md and any\n"
-    << "files/folders listed in ccc.config.json, and copies a single Markdown\n"
-        << "context block to the clipboard so you can paste it straight into a chatbot.\n\n"
-        << "Usage: ccc [options]\n\n"
-        << "Options:\n"
-    << "  config                Create a default ccc.config.json in the current directory\n"
-        << "  -o, --output <file>   Also write the generated context to <file>\n"
-        << "      --no-clipboard    Don't touch the clipboard (useful with --output)\n"
-        << "  -h, --help            Show this help message\n";
-}
+    void printHelp() {
+        std::cout
+            << "ccc - Copy Context to Clipboard\n\n"
+            << "Scans the current directory (honoring .gitignore), reads AGENTS.md and any\n"
+            << "files/folders listed in ccc.config.json, and copies a single Markdown\n"
+            << "context block to the clipboard.\n\n"
+            << "Usage: ccc [options]\n\n"
+            << "Options:\n"
+            << "  config     Create a default ccc.config.json in the current directory\n"
+            << "  -a ...     Add files/folders (overrides .gitignore)\n"
+            << "  -e ...     Exclude files/folders (highest priority)\n"
+            << "  -h         Show this help message\n";
+    }
 
-}  // namespace
+} // namespace
 
 int main(int argc, char** argv) {
-    std::string outputFile;
-    bool noClipboard = false;
+    std::vector<std::string> addArgs;
+    std::vector<std::string> excludeArgs;
 
+    // -------------------------
+    // Parse CLI
+    // -------------------------
     for (int i = 1; i < argc; ++i) {
         const std::string arg = argv[i];
+
         if (arg == "-h" || arg == "--help") {
             printHelp();
             return 0;
-        } else if (arg == "config") {
-            // Create a default config file (ccc.config.json) in the current
-            // working directory. Do not overwrite an existing file.
+        }
+
+        else if (arg == "config") {
             const fs::path configPath = fs::current_path() / "ccc.config.json";
-            std::error_code existsEc;
-            if (fs::exists(configPath, existsEc) && !existsEc) {
+
+            std::error_code ec;
+            if (fs::exists(configPath, ec) && !ec) {
                 std::cout << "ccc.config.json already exists: " << configPath.string() << "\n";
                 return 0;
             }
+
             const std::string defaultConfig =
                 "{\n"
                 "  \"include\": [\n"
@@ -60,74 +66,113 @@ int main(int argc, char** argv) {
                 "    \"docs/internal-notes.md\"\n"
                 "  ]\n"
                 "}\n";
+
             try {
                 ccc::writeTextFile(configPath, defaultConfig);
                 std::cout << "Wrote default config to " << configPath.string() << "\n";
                 return 0;
-            } catch (const std::exception& e) {
+            }
+            catch (const std::exception& e) {
                 std::cerr << "Failed to write config: " << e.what() << "\n";
                 return 1;
             }
-        } else if ((arg == "-o" || arg == "--output") && i + 1 < argc) {
-            outputFile = argv[++i];
-        } else if (arg == "--no-clipboard") {
-            noClipboard = true;
-        } else {
-            std::cerr << "Unknown argument: " << arg << " (use --help for usage)\n";
+        }
+
+        else if (arg == "-a") {
+            while (i + 1 < argc && argv[i + 1][0] != '-') {
+                addArgs.emplace_back(argv[++i]);
+            }
+        }
+
+        else if (arg == "-e") {
+            while (i + 1 < argc && argv[i + 1][0] != '-') {
+                excludeArgs.emplace_back(argv[++i]);
+            }
+        }
+
+        else {
+            std::cerr << "Unknown argument: " << arg << " (use --help)\n";
             return 1;
         }
     }
 
-    // Always operate on the directory the tool was *invoked* from, not
-    // wherever the executable itself lives - this is what lets people add
-    // the exe's folder to PATH and run `ccc` from any project.
+    // -------------------------
+    // Root
+    // -------------------------
     const fs::path root = fs::current_path();
 
-    // 1. Scan the project tree, honoring every .gitignore found along the
-    //    way (root-level and nested).
+    // -------------------------
+    // Project tree (gitignore aware)
+    // -------------------------
     const ccc::FileNode rootNode = ccc::scanDirectory(root);
+
     std::string rootLabel = root.filename().string();
     if (rootLabel.empty()) {
         rootLabel = root.generic_string();
     }
-    const std::string projectStructure = ccc::renderTree(rootNode, rootLabel);
 
-    // 2. ccc.config.json - explicit extra files/folders to include.
+    const std::string projectStructure =
+        ccc::renderTree(rootNode, rootLabel);
+
+    // -------------------------
+    // Config includes
+    // -------------------------
     const fs::path configPath = root / "ccc.config.json";
-    const std::vector<std::string> otherRelPaths = ccc::resolveConfig(root, configPath);
+    const std::vector<std::string> configIncludes =
+        ccc::resolveConfig(root, configPath);
+
+    // -------------------------
+    // Resolve files (CLI + config)
+    // -------------------------
+    ccc::PathResolver resolver(root);
+
+    resolver.addIncludes(configIncludes);
+    resolver.addIncludes(addArgs);
+    resolver.addExcludes(excludeArgs);
+
+    std::vector<ccc::ResolvedFile> resolved;
+
+    try {
+        resolved = resolver.build();
+    }
+    catch (const std::exception& e) {
+        std::cerr << "ccc: " << e.what() << "\n";
+        return 1;
+    }
+
+    if (resolved.empty()) {
+        std::cerr << "ccc: no files selected\n";
+        return 1;
+    }
 
     std::vector<std::pair<std::string, ccc::FileContent>> otherFiles;
-    otherFiles.reserve(otherRelPaths.size());
-    for (const std::string& rel : otherRelPaths) {
-        const fs::path abs = root / rel;
-        otherFiles.emplace_back(rel, ccc::readFileSafely(abs));
+    otherFiles.reserve(resolved.size());
+
+    for (const auto& f : resolved) {
+        otherFiles.emplace_back(f.relPath, f.content);
     }
 
-    // 4. Assemble the final Markdown context.
-    const std::string context = ccc::buildContext(projectStructure, otherFiles);
+    // -------------------------
+    // Build context
+    // -------------------------
+    const std::string context =
+        ccc::buildContext(projectStructure, otherFiles);
 
-    // 5. Output.
-    if (!outputFile.empty()) {
-        try {
-            ccc::writeTextFile(outputFile, context);
-            std::cout << "Wrote context to " << outputFile << "\n";
-        } catch (const std::exception& e) {
-            std::cerr << "Failed to write " << outputFile << ": " << e.what() << "\n";
-        }
-    }
-
-    if (!noClipboard) {
-        if (ccc::setClipboardText(context)) {
-            std::cout << "Context copied to clipboard (" << context.size() << " bytes, "
-                       << otherFiles.size() << " extra file(s) included). Ready to paste!\n";
-        } else {
-            std::cerr << "Failed to copy to clipboard.\n";
+    // -------------------------
+    // Clipboard ONLY (no fallback, no bypass)
+    // -------------------------
+    if (!ccc::setClipboardText(context)) {
+        std::cerr << "Failed to copy to clipboard.\n";
 #ifndef _WIN32
-            std::cerr << "On Linux, install one of: wl-clipboard, xclip, or xsel.\n";
+        std::cerr << "Install: wl-clipboard, xclip, or xsel\n";
 #endif
-            return 1;
-        }
+        return 1;
     }
+
+    std::cout
+        << "Context copied to clipboard ("
+        << context.size() << " bytes, "
+        << otherFiles.size() << " file(s))\n";
 
     return 0;
 }
