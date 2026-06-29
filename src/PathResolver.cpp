@@ -2,31 +2,63 @@
 
 #include <algorithm>
 #include <iostream>
-
-namespace fs = std::filesystem;
+#include <stdexcept>
 
 namespace ccc {
 
-    static std::vector<std::string> collectAllFiles(const fs::path& root) {
-        std::vector<std::string> files;
+    static void collectAllFilesFromNode(
+        const FileNode& node,
+        const std::string& currentPath,
+        std::vector<std::string>& out)
+    {
+        std::string path = currentPath.empty()
+            ? node.name
+            : currentPath + "/" + node.name;
 
-        for (auto it = fs::recursive_directory_iterator(root); it != fs::recursive_directory_iterator(); ++it) {
-            std::error_code ec;
-            if (it->is_regular_file(ec) && !ec) {
-                std::string rel = fs::relative(it->path(), root, ec).generic_string();
-                if (!ec) files.push_back(rel);
-            }
+        if (!node.isDirectory) {
+            out.push_back(path);
+            return;
         }
-        return files;
+
+        for (const auto& child : node.children) {
+            collectAllFilesFromNode(child, path, out);
+        }
     }
 
-    PathResolver::PathResolver(const fs::path& root) : root_(root) {
-        allFiles_ = collectAllFiles(root_);
+    const FileNode* PathResolver::findNode(
+        const FileNode& node,
+        const std::string& relPath,
+        const std::string& currentPath) const
+    {
+        std::string fullPath = currentPath.empty()
+            ? node.name
+            : currentPath + "/" + node.name;
+
+        if (fullPath == relPath)
+            return &node;
+
+        if (!node.isDirectory)
+            return nullptr;
+
+        for (const auto& child : node.children) {
+            if (auto* res = findNode(child, relPath, fullPath))
+                return res;
+        }
+
+        return nullptr;
+    }
+
+    PathResolver::PathResolver(
+        const std::filesystem::path& root,
+        const ccc::FileNode& rootNode)
+        : root_(root), rootNode_(rootNode)
+    {
+        collectAllFilesFromNode(rootNode_, "", allFiles_);
     }
 
     bool PathResolver::isDir(const std::string& rel) const {
-        std::error_code ec;
-        return fs::is_directory(root_ / rel, ec);
+        const FileNode* node = findNode(rootNode_, rel);
+        return node && node->isDirectory;
     }
 
     std::string PathResolver::resolveUnique(const std::string& input) const {
@@ -45,7 +77,8 @@ namespace ccc {
 
         if (matches.size() > 1) {
             std::string err = "Ambiguous path: " + input + "\nMatches:\n";
-            for (const auto& m : matches) err += "  " + m + "\n";
+            for (const auto& m : matches)
+                err += "  " + m + "\n";
             throw std::runtime_error(err);
         }
 
@@ -90,7 +123,7 @@ namespace ccc {
 
         auto markExclude = [&](const std::string& input) {
             try {
-                auto files = const_cast<PathResolver*>(this)->resolveMany(input);
+                auto files = resolveMany(input);
                 for (const auto& f : files) {
                     excluded.insert(f);
                 }
@@ -102,7 +135,7 @@ namespace ccc {
 
         auto markInclude = [&](const std::string& input) {
             try {
-                auto files = const_cast<PathResolver*>(this)->resolveMany(input);
+                auto files = resolveMany(input);
 
                 for (const auto& f : files) {
                     if (excluded.count(f)) continue;
@@ -115,24 +148,18 @@ namespace ccc {
                     FileContent fc = readFileSafely(root_ / f);
                     result.push_back({ f, std::move(fc) });
                 }
-
             }
             catch (const std::exception& e) {
                 std::cerr << "[ccc] include warning: " << e.what() << "\n";
             }
             };
 
-        // 1. includes first
-        for (const auto& i : includeInputs_) {
+        for (const auto& i : includeInputs_)
             markInclude(i);
-        }
 
-        // 2. excludes override EVERYTHING
-        for (const auto& e : excludeInputs_) {
+        for (const auto& e : excludeInputs_)
             markExclude(e);
-        }
 
-        // 3. re-filter result after excludes (critical correctness step)
         std::vector<ResolvedFile> finalOut;
         for (auto& f : result) {
             if (!excluded.count(f.relPath)) {

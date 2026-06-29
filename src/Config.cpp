@@ -1,4 +1,19 @@
-std::vector<std::string> resolveConfig(const std::filesystem::path& rootDir,
+#include <vector>
+#include <string>
+#include <filesystem>
+#include <fstream>
+#include <iostream>
+#include <stdexcept>
+#include <system_error>
+
+#include <nlohmann/json.hpp>
+
+#include "Config.h"
+#include "FileUtils.h"
+
+namespace ccc {
+
+ConfigEntries resolveConfig(const std::filesystem::path& rootDir,
     const std::filesystem::path& configPath) {
     (void)rootDir; // no longer used
 
@@ -47,3 +62,37 @@ std::vector<std::string> resolveConfig(const std::filesystem::path& rootDir,
         .excludes = std::move(excludes)
     };
 }
+
+int createDefaultConfig(const std::filesystem::path& rootDir) {
+    const std::filesystem::path configPath = rootDir / "ccc.config.json";
+
+    std::error_code ec;
+    if (std::filesystem::exists(configPath, ec) && !ec) {
+        std::cout << "ccc.config.json already exists: " << configPath.string() << "\n";
+        return 1;
+    }
+
+    const std::string defaultConfig =
+        "{\n"
+        "  \"include\": [\n"
+        "    \"AGENTS.md\",\n"
+        "    \"docs\",\n"
+        "    \"package.json\"\n"
+        "  ],\n"
+        "  \"exclude\": [\n"
+        "    \"docs/internal-notes.md\"\n"
+        "  ]\n"
+        "}\n";
+
+    try {
+        ccc::writeTextFile(configPath, defaultConfig);
+        std::cout << "Wrote default config to " << configPath.string() << "\n";
+        return 0;
+    }
+    catch (const std::exception& e) {
+        std::cerr << "Failed to write config: " << e.what() << "\n";
+        return 2;
+    }
+}
+
+} // namespace ccc

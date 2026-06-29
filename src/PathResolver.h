@@ -5,6 +5,7 @@
 #include <vector>
 #include <unordered_set>
 
+#include "DirectoryScanner.h"
 #include "FileUtils.h"
 
 namespace ccc {
@@ -16,19 +17,21 @@ namespace ccc {
 
     class PathResolver {
     public:
-        explicit PathResolver(const std::filesystem::path& root);
+        explicit PathResolver(
+            const std::filesystem::path& root,
+            const ccc::FileNode& rootNode
+        );
 
-        // CLI inputs
         void addIncludes(const std::vector<std::string>& inputs);
         void addExcludes(const std::vector<std::string>& inputs);
 
-        // Build final file list
         std::vector<ResolvedFile> build() const;
 
     private:
         std::filesystem::path root_;
+        const ccc::FileNode& rootNode_;
 
-        std::vector<std::string> allFiles_; // full relative paths from scan
+        std::vector<std::string> allFiles_;
 
         std::vector<std::string> includeInputs_;
         std::vector<std::string> excludeInputs_;
@@ -38,6 +41,10 @@ namespace ccc {
 
         bool isDir(const std::string& rel) const;
         std::vector<std::string> expandDirectory(const std::string& relDir) const;
+
+        const FileNode* findNode(const FileNode& node,
+            const std::string& relPath,
+            const std::string& currentPath = "") const;
     };
 
 } // namespace ccc

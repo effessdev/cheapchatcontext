@@ -9,6 +9,7 @@
 #include "FileUtils.h"
 #include "MarkdownBuilder.h"
 #include "TreeRenderer.h"
+#include "PathResolver.h"
 
 namespace fs = std::filesystem;
 
@@ -111,12 +112,12 @@ int main(int argc, char **argv)
     // -------------------------
     // Resolve files (CLI + config)
     // -------------------------
-    ccc::PathResolver resolver(root); // Create an instance
+    ccc::PathResolver resolver(root, rootNode); // Create an instance
 
-    resolver.addIncludes(configEntries.include);
+    resolver.addIncludes(configEntries.includes);
     resolver.addIncludes(addArgs);
 
-    resolver.addExcludes(configEntries.exclude);
+    resolver.addExcludes(configEntries.excludes);
     resolver.addExcludes(excludeArgs);
 
     std::vector<ccc::ResolvedFile> resolved;
