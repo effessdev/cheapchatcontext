@@ -77,19 +77,6 @@ int main(int argc, char** argv) {
     const fs::path root = fs::current_path();
 
     // -------------------------
-    // Project tree (gitignore aware)
-    // -------------------------
-    const ccc::FileNode rootNode = ccc::scanDirectory(root);
-
-    std::string rootLabel = root.filename().string();
-    if (rootLabel.empty()) {
-        rootLabel = root.generic_string();
-    }
-
-    const std::string projectStructure =
-        ccc::renderTree(rootNode, rootLabel);
-
-    // -------------------------
     // Config includes
     // -------------------------
     const fs::path configPath = root / "ccc.config.json";
@@ -97,9 +84,23 @@ int main(int argc, char** argv) {
         ccc::resolveConfig(root, configPath);
 
     // -------------------------
+    // Project tree (gitignore aware)
+    // -------------------------
+    const ccc::FileNode rootNode = ccc::scanDirectory(root);
+
+    std::string rootLabel = root.filename().string(); // name of the root dir
+    if (rootLabel.empty()) {
+        rootLabel = root.generic_string(); // For paths like `/` and `C:\`
+        // Note: If the path is `C:\`, the output will be `C:/`
+    }
+
+    const std::string projectStructure =
+        ccc::renderTree(rootNode, rootLabel);
+
+    // -------------------------
     // Resolve files (CLI + config)
     // -------------------------
-    ccc::PathResolver resolver(root);
+    ccc::PathResolver resolver(root); // Create an instance
 
     resolver.addIncludes(configIncludes);
     resolver.addIncludes(addArgs);
