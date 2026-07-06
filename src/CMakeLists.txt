@@ -1,12 +1,13 @@
-﻿# CMakeList.txt : CMake project for CheapChatContext, include source and define
-# project specific logic here.
-#
+﻿# Define a library 'scanner' using the source file. This allows modular code organization.
+# scanner: The internal name you give this library. You use this name later to "link" it to other things.
+# ProjectScanner.cpp: The source file(s) that belong to this library.
+add_library(ccc_lib ProjectScanner.cpp)
 
-# Add source to this project's executable.
-add_executable (ccc "main.cpp"  "ProjectScanner.h" "ProjectScanner.cpp")
+# Define the main application executable from main.cpp
+# ccc: The name of the final output file (e.g., ccc.exe).
+# main.cpp: The entry point file containing your int main() function.
+add_executable(ccc main.cpp)
 
-if (CMAKE_VERSION VERSION_GREATER 3.12)
-  set_property(TARGET ccc PROPERTY CXX_STANDARD 20)
-endif()
-
-# TODO: Add tests and install targets if needed.
+# Link the executable to the 'scanner' library. 
+# 'PRIVATE' means these dependencies are only used by the executable, not inherited by things that use the executable.
+target_link_libraries(ccc PRIVATE ccc_lib)

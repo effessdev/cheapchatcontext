@@ -1,15 +1,13 @@
-﻿# CMakeList.txt : Top-level CMake project file, do global configuration
-# and include sub-projects here.
-#
-cmake_minimum_required (VERSION 3.10)
+﻿# Define the minimum version of CMake required for the project
+cmake_minimum_required(VERSION 3.14)
 
-# Enable Hot Reload for MSVC compilers if supported.
-if (POLICY CMP0141)
-  cmake_policy(SET CMP0141 NEW)
-  set(CMAKE_MSVC_DEBUG_INFORMATION_FORMAT "$<IF:$<AND:$<C_COMPILER_ID:MSVC>,$<CXX_COMPILER_ID:MSVC>>,$<$<CONFIG:Debug,RelWithDebInfo>:EditAndContinue>,$<$<CONFIG:Debug,RelWithDebInfo>:ProgramDatabase>>")
-endif()
+# Set project name and basic information
+project(ccc VERSION 1.0 LANGUAGES CXX)
 
-project ("ccc") # Initializes PROJECT_NAME, CMAKE_PROJECT_NAME, etc.
+# Require C++20 standard; CMAKE_CXX_STANDARD_REQUIRED ensures an error if the compiler is too old
+set(CMAKE_CXX_STANDARD 20)
+set(CMAKE_CXX_STANDARD_REQUIRED ON)
 
-# Include sub-projects.
-add_subdirectory ("src") # Tells CMake to go into the CheapChatContext folder and process the CMakeLists.txt file that's in there.
+# Includes the specified subdirectories to process their respective CMakeLists.txt files
+add_subdirectory(src)
+add_subdirectory(tests)
