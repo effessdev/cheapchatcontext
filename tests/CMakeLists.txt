@@ -1,23 +1,22 @@
 # --- Automated Dependency Management ---
 include(FetchContent)
 
-# Define the source and version to download
 FetchContent_Declare(
   googletest
   URL https://github.com/google/googletest/archive/refs/tags/v1.15.2.zip
 )
-
-# Downloads and adds the library to your project automatically
 FetchContent_MakeAvailable(googletest)
+
+# --- Automated Test File Inclusion ---
+# CONFIGURE_DEPENDS ensures CMake re-scans the folder when files are added/removed
+file(GLOB TEST_SOURCES CONFIGURE_DEPENDS "*.cpp")
 
 # --- Test Setup ---
 include(GoogleTest)
 
-add_executable(ccc_lib_tests ProjectScannerTests.cpp)
+# Use the variable ${TEST_SOURCES} to compile all found files
+add_executable(ccc_lib_tests ${TEST_SOURCES})
 
-# Link your scanner library and GTest
-# GTest::gtest_main is provided by the FetchContent step above
 target_link_libraries(ccc_lib_tests PRIVATE ccc_lib GTest::gtest_main)
 
-# Register tests for CTest
 gtest_discover_tests(ccc_lib_tests)
