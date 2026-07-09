@@ -1,7 +1,7 @@
 ﻿# Define a library 'scanner' using the source file. This allows modular code organization.
 # scanner: The internal name you give this library. You use this name later to "link" it to other things.
 # ProjectScanner.cpp: The source file(s) that belong to this library.
-add_library(ccc_lib ProjectScanner.cpp)
+add_library(ccc_lib ProjectScanner.cpp FileFilter.cpp)
 
 # Define the main application executable from main.cpp
 # ccc: The name of the final output file (e.g., ccc.exe).
