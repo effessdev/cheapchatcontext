@@ -9,13 +9,11 @@ using namespace std;
 
 int main()
 {
-	auto [files, tree] = ScanProject(std::filesystem::current_path());
+	auto files = ScanProject(std::filesystem::current_path());
 
-	for (const auto& file : files) {
+	cout << "Files:" << endl;
+	for (const auto &file : files)
+	{
 		cout << "file: " << file << endl;
 	};
-
-	cout << "tree:\n" << tree << endl;
-
-
 }
