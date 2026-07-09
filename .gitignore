@@ -30,3 +30,4 @@ install_manifest.txt
 *.log
 .cache/
 out/
+repomix-output.md
