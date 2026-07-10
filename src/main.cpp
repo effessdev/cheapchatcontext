@@ -40,17 +40,8 @@ int main(int argc, char *argv[])
 		}
 	}
 
-	// Print args (for development only)
-	for (const auto &arg : includeArgs)
-	{
-		cout << "include arg: " << arg << endl;
-	}
-	for (const auto &arg : excludeArgs)
-	{
-		cout << "exclude arg: " << arg << endl;
-	}
-
-	// Get the relative paths to the files in the project directory (handling .gitignore flies)
+	// Get files
+	// `files` are the relative paths to the files in the project directory (handling .gitignore flies)
 	auto files = ScanProject(std::filesystem::current_path());
 
 	cout << "Files:" << endl
@@ -60,8 +51,9 @@ int main(int argc, char *argv[])
 		cout << "file: " << file << endl;
 	};
 
-	// 2nd arg: include patterns, 3rd arg: exclude patterns
-	auto filteredFiles = filterFiles(files, {"**/*.cpp"}, {"tests/"});
+	// Filter files
+	// arg2: include patterns, arg3: exclude patterns
+	auto filteredFiles = filterFiles(files, includeArgs, excludeArgs);
 
 	cout << "Filtered Files:" << endl
 		 << endl;
