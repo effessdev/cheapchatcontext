@@ -8,6 +8,7 @@
 #include "ProjectScanner.h"
 #include "FileFilter.h"
 #include "FileReader.h"
+#include "FileWriter.h"
 
 using namespace std;
 
@@ -19,7 +20,17 @@ int main(int argc, char *argv[])
 	std::vector<std::string> includeArgs = {};
 	std::vector<std::string> excludeArgs = {};
 
-	// Parse args
+	// Parse `config` command
+	if (argc > 1 && std::string(argv[1]) == "config")
+	{
+		createConfig(std::filesystem::current_path());
+		cout << "Created config file at "
+			 << std::filesystem::current_path() / "ccc-config.toml" << endl
+			 << "Edit the file according to your needs." << endl;
+		return 0;
+	};
+
+	// Parse -i (include) and -e (exclude) args
 	std::string currentFlag = "";
 	for (int i = 1; i < argc; i++)
 	{
@@ -46,7 +57,7 @@ int main(int argc, char *argv[])
 	auto files = ScanProject(std::filesystem::current_path());
 
 	// Filter files
-	// arg2: include patterns, arg3: exclude patterns
+	// arg2: include glob patterns, arg3: exclude glob patterns
 	auto filteredFiles = filterFiles(files, includeArgs, excludeArgs);
 
 	// Build the output
