@@ -7,6 +7,7 @@
 
 #include "ProjectScanner.h"
 #include "FileFilter.h"
+#include "FileReader.h"
 
 using namespace std;
 
@@ -44,23 +45,27 @@ int main(int argc, char *argv[])
 	// `files` are the relative paths to the files in the project directory (handling .gitignore flies)
 	auto files = ScanProject(std::filesystem::current_path());
 
-	cout << "Files:" << endl
-		 << endl;
-	for (const auto &file : files)
-	{
-		cout << "file: " << file << endl;
-	};
-
 	// Filter files
 	// arg2: include patterns, arg3: exclude patterns
 	auto filteredFiles = filterFiles(files, includeArgs, excludeArgs);
 
-	cout << "Filtered Files:" << endl
-		 << endl;
+	// Build the output
+	std::string output = "# Context\n\n## Project structure:\n\n";
+	for (const auto &file : files)
+	{
+		output += file.string() + "\n";
+	}
+	output += "\n";
 	for (const auto &file : filteredFiles)
 	{
-		cout << "file: " << file << endl;
-	};
+		output += "## File: " + file.string() + "\n\n";
+		output += readFileToStringCodeBlock(file) + "\n\n";
+	}
+
+	output += "# Prompt\n\n";
+
+	// Print the output (later convert to clipboard paste)
+	cout << output;
 
 	return 0;
 }
