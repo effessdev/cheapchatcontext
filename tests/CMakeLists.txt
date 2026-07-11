@@ -12,6 +12,7 @@ include(GoogleTest)
 
 add_executable(ccc_lib_tests ProjectScannerTests.cpp FileFilterTests.cpp)
 
+target_include_directories(ccc_lib_tests PRIVATE ${PROJECT_SOURCE_DIR}/include)
 target_link_libraries(ccc_lib_tests PRIVATE ccc_lib GTest::gtest_main)
 
 gtest_discover_tests(ccc_lib_tests)

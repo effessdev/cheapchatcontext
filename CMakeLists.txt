@@ -8,6 +8,9 @@ project(ccc VERSION 1.0 LANGUAGES CXX)
 set(CMAKE_CXX_STANDARD 20)
 set(CMAKE_CXX_STANDARD_REQUIRED ON)
 
+# Make bundled third-party headers available to all targets
+include_directories(${PROJECT_SOURCE_DIR}/include)
+
 # Configure dependencies before processing targets
 # Force GoogleTest to use the Dynamic Runtime (MDd/MD) to match project settings
 set(gtest_force_shared_crt ON CACHE BOOL "" FORCE)

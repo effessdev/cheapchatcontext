@@ -9,6 +9,7 @@
 #include "FileFilter.h"
 #include "FileReader.h"
 #include "FileWriter.h"
+#include "toml.hpp"
 
 using namespace std;
 
